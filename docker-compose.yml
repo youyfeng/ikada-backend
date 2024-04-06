@@ -1,24 +1,24 @@
 version: '3'
 
 services:
-  nest-admin-web:
-    image: buqiyuan/vue3-antdv-admin:stable
-    container_name: nest-admin-web
-    volumes:
-      - ./deploy/web:/etc/nginx/conf.d
-    ports:
-      - '80:80'
-    restart: always
-    networks:
-      - nest_admin_net
+  # nest-admin-web:
+  #   image: buqiyuan/vue3-antdv-admin:stable
+  #   container_name: nest-admin-web
+  #   volumes:
+  #     - ./deploy/web:/etc/nginx/conf.d
+  #   ports:
+  #     - '80:80'
+  #   restart: always
+  #   networks:
+  #     - yf_net
   mysql:
     image: mysql:latest
-    container_name: nest-admin-mysql
+    container_name: yf-mysql
     restart: always
     env_file:
       - .env
       - .env.production
-    environment: 
+    environment:
       - MYSQL_HOST=${DB_HOST}
       - MYSQL_PORT=${DB_PORT}
       - MYSQL_DATABASE=${DB_DATABASE}
@@ -27,47 +27,50 @@ services:
       - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
     ports:
       - '${DB_PORT}:3306'
-    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci #设置utf8字符集
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci # 设置utf8字符集
     volumes:
-      - ./__data/mysql/:/var/lib/mysql/ # ./__data/mysql/ 路径可以替换成自己的路径
-      - ./deploy/sql/:/docker-entrypoint-initdb.d/ # 初始化的脚本，若 ./__data/mysql/ 文件夹存在数据，则不会执行初始化脚本
+      - /Users/feng/yf-repo/mysql/conf.d:/etc/mysql/conf.d
+      - /Users/feng/yf-repo/mysql/data/:/var/lib/mysql/
+      - /Users/feng/yf-repo/mysql/init/:/docker-entrypoint-initdb.d/ # 初始化的脚本，若 ./__data/mysql/ 文件夹存在数据，则不会执行初始化脚本
     networks:
-      - nest_admin_net
+      - yf_net
 
   redis:
-    image: redis:alpine
-    container_name: nest-admin-redis
+    image: redis:latest
+    container_name: yf-redis
     restart: always
     env_file:
       - .env
       - .env.production
     ports:
       - '${REDIS_PORT}:6379'
-    command: >
-      --requirepass ${REDIS_PASSWORD}
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - /Users/feng/yf-repo/redis/data:/data
+      - /Users/feng/yf-repo/redis/config:/usr/local/etc/redis/redis.conf
     networks:
-      - nest_admin_net
+      - yf_net
 
-  nest-admin-server:
-    # build: 从当前路径构建镜像
-    build: .
-    image: buqiyuan/nest-admin-server:stable
-    container_name: nest-admin-server
-    restart: always
-    env_file:
-      - .env
-      - .env.production
-    extra_hosts:
-      - 'host.docker.internal:host-gateway'
-    ports:
-      - '${APP_PORT}:${APP_PORT}' 
-    # 当前服务启动之前先要把depends_on指定的服务启动起来才行
-    depends_on:
-      - mysql
-      - redis
-    networks:
-      - nest_admin_net
+  # nest-admin-server:
+  #   # build: 从当前路径构建镜像
+  #   build: .
+  #   image: buqiyuan/nest-admin-server:stable
+  #   container_name: nest-admin-server
+  #   restart: always
+  #   env_file:
+  #     - .env
+  #     - .env.production
+  #   extra_hosts:
+  #     - 'host.docker.internal:host-gateway'
+  #   ports:
+  #     - '${APP_PORT}:${APP_PORT}'
+  #   # 当前服务启动之前先要把depends_on指定的服务启动起来才行
+  #   depends_on:
+  #     - mysql
+  #     - redis
+  #   networks:
+  #     - yf_net
 
 networks:
-  nest_admin_net:
-    name: nest_admin_net
+  yf_net:
+    name: yf_net
